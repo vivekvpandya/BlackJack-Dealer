@@ -1,50 +1,34 @@
 #ifndef TABLE_H
 #define TABLE_H
-
-#include <QObject>
 #include <QString>
-#include <QHostAddress>
-#include <QSet>
-#include "peer.h"
+#include <list>
+
+class Player;
+class Card;
+
 class Table
 {
-
-
 public:
     Table();
-
-    Table( QString tableName1, QString tableCap1, int  portNum);
-
-    QString getTableName() const;
-    void setTableName(const QString &tableName1);
-
-    QString getTableCap() const;
-    void setTableCap(const QString &tableCap1);
-
-    int getPort() const;
-    void setPort(int portNum);
-
-    QSet<Peer> getJoinedNickNames() const;
-    void setJoinedNickNames(const QSet<Peer> &joinedNickNames1);
-
-    void addNickName(const Peer &nickName) ;
-    void removeNickName(const Peer &nickName);
-    bool checkNickNameAvailability(QString nickName);
-
-
+    int getCapacity();
+    void setCapacity(int capacity_);
+    QString getTableName();
+    void setTableName(QString  tableName_);
+    qint64 getPortNo();
+    void setPortNo(qint64 portNo_);
+    bool isWaitingForPlayer();
+    void setWaitingForPlayer(bool wait);
+    void addPlayerToTable(Player player);
+    std::list< Player >::iterator playerListBegin();
+    std::list< Player >::iterator playerListEnd();
+    void addCardtoPlayeratIndex(Card card, int index);
 private:
-    // To hold Table name
+    int capacity;
     QString tableName;
-    // To hold Table Capacity
-    QString tableCap;
-    // This variable holds multicast group port
-    int port;
-
-    // To hold list of nick names connected to this Table
-    // Need to change this to QSet
-    QSet<Peer> joinedNickNames; // Peer object do not define equals method.
+    qint64 portNo;
+    std::list< Player >connectedPalyer;
+    bool waitForPalyer;
 
 };
-QDataStream & operator <<( QDataStream & stream, const Table &Table);
-QDataStream & operator >>(QDataStream & stream, Table & Table);
-#endif // Table_H
+
+#endif // TABLE_H

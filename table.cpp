@@ -1,108 +1,72 @@
 #include "table.h"
+#include "player.h"
+#include "card.h"
 
 Table::Table()
 {
 
 }
-//Table constructor to create a Table
-Table::Table( QString tableName1,  QString tableCap1, int portNum){
 
-    tableName = tableName1;
-    port = portNum;
-    tableCap = tableCap1;
-
+int Table:: getCapacity()
+{
+    return capacity;
 }
 
+void Table:: setCapacity(int capacity_)
+{
+    capacity = capacity_;
+}
 
-QString Table::getTableName() const
+QString Table::getTableName()
 {
     return tableName;
 }
 
-void Table::setTableName(const QString &tableName1 ){
-
-    tableName = tableName1;
-}
-
-int Table::getPort() const
+void Table::setTableName(QString tableName_)
 {
-    return port;
+    tableName = tableName_;
 }
 
-void Table::setPort(int portNum)
+qint64 Table::getPortNo()
 {
-    port = portNum;
+    return portNo;
 }
 
-QString Table::getTableCap() const
+void Table::setPortNo(qint64 portNo_)
 {
-    return tableCap;
+    portNo = portNo_;
 }
 
-void Table::setTableCap(const QString &tableCap1)
+bool Table::isWaitingForPlayer()
 {
-    tableCap = tableCap1;
+    return waitForPalyer;
 }
 
-QSet<Peer> Table::getJoinedNickNames() const
+void Table::setWaitingForPlayer(bool wait)
 {
-    return joinedNickNames;
+    waitForPalyer = wait;
 }
 
-void Table::setJoinedNickNames(const QSet<Peer> &joinedNickNames1)
+void Table::addPlayerToTable(Player player)
 {
-    joinedNickNames = joinedNickNames1;
+    connectedPalyer.push_back(player);
 }
 
-void  Table::addNickName(const Peer &nickName) {
-
-    joinedNickNames.insert(nickName);
-
+std::list< Player >::iterator Table::playerListBegin()
+{
+    return connectedPalyer.begin();
 }
 
-void Table::removeNickName(const Peer &nickName){
-
-    joinedNickNames.remove(nickName);
+std::list< Player >::iterator Table::playerListEnd()
+{
+    return connectedPalyer.end();
 }
 
-bool Table::checkNickNameAvailability(QString nickName){
-    for(Peer peer:joinedNickNames){
-        if(peer.getNickName().compare(nickName) == 0){
-            return false;
-        }
-
-    }
-    return true;
+void Table::addCardtoPlayeratIndex(Card card, int index)
+{
+    std::list<Player >::iterator playerIt = connectedPalyer.begin();
+    std::advance(playerIt, index);
+    (*playerIt).addCardToHand(card);
 }
 
-QDataStream & operator << (QDataStream & stream, const Table &table){
-    stream << table.getTableName();
-    stream << table.getTableCap();
-    stream << table.getPort();
-    QSet<Peer> joinedNicks = table.getJoinedNickNames();
-    int joinedNicksSize = joinedNicks.size();
-    stream << joinedNicksSize;
-    for(Peer peer: joinedNicks){
-        stream << peer;
-    }
 
-}
-QDataStream & operator >>(QDataStream & stream, Table &table){
-    QString tableName;
-    QString tableCap;
-    int tablePort;
-    int joinedNickSize;
-    stream >> tableName;
-    table.setTableName(tableName);
-    stream >> tableCap;
-    table.setTableCap(tableCap);
-    stream >> tablePort;
-    table.setPort(tablePort);
-
-    stream >> joinedNickSize;
-    Peer peerObj;
-    for(int i=0;i<joinedNickSize;i++){
-        stream >> peerObj;
-        table.addNickName(peerObj);
-    }
-}

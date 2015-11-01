@@ -2,8 +2,6 @@
 #define MESSAGE_H
 #include <vector>
 #include <QDataStream>
-#include <peer.h>
-#include "table.h"
 
 
 enum class MessageType{
@@ -20,6 +18,8 @@ enum class MessageType{
 QDataStream & operator <<( QDataStream & stream, const MessageType &type);
 QDataStream & operator >>(QDataStream & stream, MessageType & types);
 
+class Table;
+class Card;
 
 class Message
 {
@@ -31,17 +31,17 @@ public:
     Message(MessageType type);
     std::vector<QString> getDataStrings() const;
     void insertDataString(const QString &string);
-    std::vector<Peer> getPeerVector() const;
-    void insertPeerObj(const Peer &peer);
-    std::vector<Table> getTableVector() const;
-    void insertTableObj(const Table &table);
+    std::vector<Table> getTableDetails() const;
+    void insertTable(Table table);
+    std::vector<Card> getCards() const;
+    void insertCard(Card card);
 
 
 private:
     MessageType m_type;
     std::vector<QString> dataStrings;
-    std::vector<Peer> peerVector;
-    std::vector<Table> tableVector;
+    std::vector<Table> tables;
+    std::vector<Card> cards;
 
 };
 

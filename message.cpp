@@ -21,25 +21,26 @@ MessageType Message::getMessageType() const {
 std::vector<QString> Message::getDataStrings() const{
     return dataStrings;
 }
-std::vector<Peer> Message::getPeerVector() const{
-    return peerVector;
-}
 
 void Message::insertDataString(const QString &string){
 
     dataStrings.push_back(string);
 }
 
-void Message::insertPeerObj(const Peer &peer){
-
-    peerVector.push_back(peer);
+std::vector<Table> Message::getTableDetails() const{
+    return tables;
 }
 
-std::vector<Table> Message::getTableVector() const{
-    return tableVector;
+void Message::insertTable(Table table){
+    tables.push_back(table);
 }
-void Message::insertTableObj(const Table &table){
-    tableVector.push_back(table);
+
+std::vector<Card> Message::getCards() const{
+    return cards;
+}
+
+void Message::insertCard(Card card){
+    cards.push_back(card);
 }
 
 QDataStream & operator <<( QDataStream & stream, const MessageType &type){
@@ -57,27 +58,26 @@ QDataStream & operator >>(QDataStream & stream, MessageType & type){
 QDataStream & operator <<(QDataStream & stream, const Message &message){
 
     stream << message.getMessageType();
-
     std::vector<QString> dataStrings = message.getDataStrings();
     int dataStringsSize = dataStrings.size();
     stream << dataStringsSize;
-    std::vector<Peer> peerObjects = message.getPeerVector();
-    int peerVectorSize = peerObjects.size();
-    stream << peerVectorSize;
-    std::vector<Table> tableVector = message.getTableVector();
-    int tableVectorSize = tableVector.size();
-    stream << tableVectorSize;
-    for( QString obj : dataStrings ){
-        
-        stream << obj;
+    std::vector<Table> tables = message.getTableDetails();
+    int numberoOftables = tables.size();
+    stream << numberoOftables;
+    std::vector<Card> cards = message.getCards();
+    int numberOfCards = cards.size();
+    stream << numberOfCards;
+    for(std::vector<QString>::iterator i = dataStrings.begin(); i != dataStrings.end() ; i++)
+    {
+        stream << *i;
     }
-
-    for(Peer peer :  peerObjects){
-        stream<<peer;
-
+    for(std::vector<Table>::iterator i = tables.begin(); i != tables.end(); i++)
+    {
+        stream << *i;
     }
-    for(Table table: tableVector){
-        stream << table;
+    for(std::vector<Card>::iterator i = cards.begin(); i != cards.end(); i++)
+    {
+        stream << *i;
     }
     return stream;
 }
@@ -85,29 +85,30 @@ QDataStream & operator <<(QDataStream & stream, const Message &message){
 QDataStream &  operator >>(QDataStream & stream, Message &message){
     MessageType mtype;
     QString stringObj;
-    Peer peerObj;
     Table tableObj;
+    Card cardObj;
     int dataStringsSize;
-    int peerVectorSize;
-    int tableVectorSize;
-
+    int numberOfTables;
+    int numberOfCards;
     stream >> mtype;
     stream >> dataStringsSize;
-    stream >> peerVectorSize;
-    stream >> tableVectorSize;
+    stream >> numberOfTables;
+    stream >> numberOfCards;
     message.setMessageType(mtype);
-
-    for(int i=0;i<dataStringsSize;i++){
+    for(int i=0;i<dataStringsSize;i++)
+    {
         stream>>stringObj;
         message.insertDataString(stringObj);
     }
-    for(int i=0;i<peerVectorSize; i++){
-        stream>>peerObj;
-        message.insertPeerObj(peerObj);
+    for(int i=0; i<numberOfTables; i++)
+    {
+        staeam >> tableObj;
+        message.insertTable(tableObj);
     }
-    for(int i=0;i<tableVectorSize; i++){
-        stream >> tableObj;
-        message.insertTableObj(tableObj);
+    for(int i=0; i<numberOfCards; i++)
+    {
+        stream >> cardObj;
+        message.insertCard(cardObj);
     }
     return stream;
 }
