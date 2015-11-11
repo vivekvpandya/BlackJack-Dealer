@@ -89,45 +89,26 @@ void Table::addCardtoPlayeratIndex(Card card, int index)
     (*playerIt).addCardToHand(card);
 }
 
-QDataStream & operator <<( QDataStream & stream,  Table &table)
+QDataStream & operator <<( QDataStream & stream, Table &table)
 {
     stream << table.getCapacity();
     stream << table.getPortNo();
     stream << table.getTableName();
-    qDebug() << "Sendig name "<<table.getTableName();
     stream << table.isWaitingForPlayer();
-    stream << table.numberofConnectedPlayer();
-    std::list<Player> *connectedPlayer = table.getPlayerList();
-    std::list<Player>::iterator i,e ;
-    i = connectedPlayer->begin();
-    e = connectedPlayer->end();
-    for(;i!=e; i++)
-    {   qDebug() << "Player sent!";
-        stream << *i;
-    }
     return stream;
 }
 QDataStream & operator >>(QDataStream & stream, Table & table)
-{
-    int capacity_;
-    int portNo_;
-    QString tableName_;
-    bool isWaitingForPlayer_;
-    int numberofConnectedPlayer_;
-    stream >> capacity_;
-    table.setCapacity(capacity_);
-    stream >> portNo_;
-    table.setPortNo(portNo_);
-    stream >> tableName_;
-    table.setTableName(tableName_);
-    stream >> isWaitingForPlayer_;
-    table.setWaitingForPlayer(isWaitingForPlayer_);
-    stream >> numberofConnectedPlayer_;
-    Player player;
-    for(int i=0; i< numberofConnectedPlayer_ ; i++)
-    {   qDebug() << "Player";
-        stream >> player;
-        table.addPlayerToTable(player);
-    }
+{   int capacity;
+    qint64 portNo;
+    QString tableName;
+    bool isWaitingForPalyer;
+    stream >> capacity;
+    stream >> portNo;
+    stream >> tableName;
+    stream >> isWaitingForPalyer;
+    table.setCapacity(capacity);
+    table.setPortNo(portNo);
+    table.setTableName(tableName);
+    table.setWaitingForPlayer(isWaitingForPalyer);
     return stream;
 }

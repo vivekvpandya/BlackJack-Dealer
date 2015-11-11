@@ -21,15 +21,19 @@ public:
 
 private slots:
     int on_createBtn_clicked();
+    void newConnection();
+    void disconnected();
+    void readyRead();
    // void onAvailableTablesListItemClicked(QListWidgetItem *listItem);
-    void updateAvalibaleTableList(std::vector<Table> tables);
+    //void updateAvalibaleTableList(std::vector<Table> tables);
 
 
 
 private:
     Ui::MainWindow *ui;
-    Dealer *dealer;
-    NetworkOperationManager *networkOperationManager;
+    int portNum = 10000;
+    QHash<QString, Table> tables;
+    QTcpServer *server;
 
 
 };

@@ -2,6 +2,8 @@
 #define MESSAGE_H
 #include <vector>
 #include <QDataStream>
+#include "table.h"
+#include "card.h"
 
 
 enum class MessageType{
@@ -18,8 +20,7 @@ enum class MessageType{
 QDataStream & operator <<( QDataStream & stream, const MessageType &type);
 QDataStream & operator >>(QDataStream & stream, MessageType & types);
 
-class Table;
-class Card;
+
 
 class Message
 {

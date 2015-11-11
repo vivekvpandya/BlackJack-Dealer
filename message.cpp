@@ -61,15 +61,22 @@ QDataStream & operator >>(QDataStream & stream, MessageType & type){
 QDataStream & operator <<(QDataStream & stream, const Message &message){
 
     stream << message.getMessageType();
+
     std::vector<QString> dataStrings = message.getDataStrings();
     int dataStringsSize = dataStrings.size();
+
     stream << dataStringsSize;
+
     std::vector<Table> tables = message.getTableDetails();
     int numberoOftables = tables.size();
+
     stream << numberoOftables;
+
     std::vector<Card> cards = message.getCards();
     int numberOfCards = cards.size();
+
     stream << numberOfCards;
+
     for(QString str : dataStrings)
     {
         stream << str;
@@ -94,10 +101,15 @@ QDataStream &  operator >>(QDataStream & stream, Message &message){
     int numberOfTables;
     int numberOfCards;
     stream >> mtype;
+
     stream >> dataStringsSize;
+
     stream >> numberOfTables;
+
     stream >> numberOfCards;
+
     message.setMessageType(mtype);
+
     for(int i=0;i<dataStringsSize;i++)
     {
         stream>>stringObj;
