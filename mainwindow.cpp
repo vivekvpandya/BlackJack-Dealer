@@ -1,40 +1,26 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 #include <QDebug>
 #include <QByteArray>
-
-#include "peer.h"
 #include <QNetworkInterface>
 #include <QMessageBox>
 #include "message.h"
+#include "dealer.h"
+#include "table.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    dealer = new Dealer(); // static instance
+    networkOperationManager = new NetworkOperationManager();
     //To connect signal raised by clicking on table in available table list to slot that contains function to display table details.
-    connect(ui->availableTablesListWidget, SIGNAL(itemClicked(QListWidgetItem*)),
-            this, SLOT(onAvailableTablesListItemClicked(QListWidgetItem*)));
-
-    //Creating new TCP connection to communicate to client
-    server = new QTcpServer(this);
-
-    // whenever a user connects, it will emit signal
-    connect(server, SIGNAL(newConnection()), this, SLOT(newConnection()));
-
-    if(!server->listen(QHostAddress::Any, 15000))
-    {   // this message should be added to GUI
-         qDebug() << "Server could not start";
-    }
-    else{
-
-        qDebug() << "Server started!";
-    }
-
-
+   // connect(ui->availableTablesListWidget, SIGNAL(itemClicked(QListWidgetItem*)),
+   //         this, SLOT(onAvailableTablesListItemClicked(QListWidgetItem*)));
+    //connect(dealer,SIGNAL(tableDetailsChanged(std::vector<Table>)),this,SLOT(updateAvalibaleTableList(std::vector<Table>)));
+    connect(dealer,SIGNAL(tableDetailsChanged(std::vector<Table>)),this,SLOT(updateAvalibaleTableList(std::vector<Table>)));
+    connect(networkOperationManager,SIGNAL(tableDetailsOnSocket(QTcpSocket*)),dealer,SLOT(writeTableDetails(QTcpSocket*)));
 }
 
 MainWindow::~MainWindow()
@@ -47,10 +33,9 @@ MainWindow::~MainWindow()
  * */
 int MainWindow::on_createBtn_clicked()
 {
-
     QString tableName = ui->tableName->text();
-    QString tableCap = ui->tableCap->text();
-
+    QString tableCapS = ui->tableCap->text();
+    int tableCap = tableCapS.toInt();
     if(tableName.isEmpty() == true){
         QMessageBox box;
         box.setText("Oops! Table Name empty.Please enter valid table Name.");
@@ -59,7 +44,7 @@ int MainWindow::on_createBtn_clicked()
 
     }
 
-    if(tableCap.toInt() > 5 || tableCap.toInt() < 1){
+    if(tableCapS.toInt() > 5 || tableCapS.toInt() < 1){
 
         QMessageBox box;
         box.setText("Sorry ! Table capacity must be between 1 to 5.");
@@ -68,28 +53,18 @@ int MainWindow::on_createBtn_clicked()
 
     }
 
-    if(tables.contains(tableName) == true)
-    {
-        QMessageBox box;
-        box.setText("Sorry! Table Name already occupied.");
-        box.exec();
-        return -1;
-    }
+   int status = dealer->createNewTable(tableCap,tableName);
+   if(status == -1){
+       QMessageBox box;
+       box.setText("Sorry! Table Name already occupied.");
+       box.exec();
+       return -1;
+   }
 
 
-    int portNumber = MainWindow::portNum++;
-    Table table = Table( tableName, tableCap, portNumber );
+  //  ui->availableTablesListWidget->addItem(table.getTableName()); This will be moved to SLOT
 
-    qDebug() << table.getTableName();
-    qDebug() << table.getTableCap();
-    qDebug() << table.getPort();
-
-   // table.addNickName("Vivek");
-   // table.addNickName("Dipesh");
-   // table.addNickName("Haresh");
-    ui->availableTablesListWidget->addItem(table.getTableName());
-
-    MainWindow::tables.insert(table.getTableName(),table);
+    //MainWindow::tables.insert(table.getTableName(),table);
 return 0;
 
 }
@@ -97,199 +72,199 @@ return 0;
 /* This is a slot responsible to handle click signal sent by availabletablesListWidget from ui.
  * It will print the information for the selected table from the tables collection.
  * */
-void MainWindow::onAvailableTablesListItemClicked(QListWidgetItem *listItem){
+//void MainWindow::onAvailableTablesListItemClicked(QListWidgetItem *listItem){
 
-   ui->infoPanelTextBox->clear();
-    Table table = MainWindow::tables.value(listItem->text());
-    QString tableName = "Table name: "+table.getTableName()+"\n";
-    QString tablePort = "Listening port: "+QString::number(table.getPort())+"\n";
-    QString tableCap = "Table Capacity: "+table.getTableCap()+"\n";
-   // qDebug() << tableName;
-    QString tableConnectedNicks = "Connected Nicks: \n";
+//    ui->infoPanelTextBox->clear();
+//    Table table = MainWindow::tables.value(listItem->text());
+//    QString tableName = "Table name: "+table.getTableName()+"\n";
+//    QString tablePort = "Listening port: "+QString::number(table.getPort())+"\n";
+//    QString tableCap = "Table Capacity: "+table.getTableCap()+"\n";
+//   // qDebug() << tableName;
+//    QString tableConnectedNicks = "Connected Nicks: \n";
 
-    for (Peer peer: table.getJoinedNickNames()) {
-       tableConnectedNicks.append(peer.getNickName()+"\n");
-    }
+//    for (Peer peer: table.getJoinedNickNames()) {
+//       tableConnectedNicks.append(peer.getNickName()+"\n");
+//    }
 
-    ui->infoPanelTextBox->insertPlainText(tableName+"\n");
-    ui->infoPanelTextBox->insertPlainText(tablePort+"\n");
-    ui->infoPanelTextBox->insertPlainText(tableCap+"\n");
-    ui->infoPanelTextBox->insertPlainText(tableConnectedNicks+"\n");
+//    ui->infoPanelTextBox->insertPlainText(tableName+"\n");
+//    ui->infoPanelTextBox->insertPlainText(tablePort+"\n");
+//    ui->infoPanelTextBox->insertPlainText(tableCap+"\n");
+//    ui->infoPanelTextBox->insertPlainText(tableConnectedNicks+"\n");
 
 
-}
+//}
 
 //Function to handle clients connecting to sockets and to send them list of available tables
 /* This is a slot responsible to handle newConnection signal sent by QTcpServer reference.
  * It binds readyRead and disconnected signals of connected socket with this class’s slots for readRead and disconnected.
  * */
-void MainWindow::newConnection()
-{
-    // Get socket for pending connection
+//void MainWindow::newConnection()
+//{
+//    // Get socket for pending connection
 
-  /*  Sample s;
-    s.message = "Hello classes!";
-    s.sender = "Vivek Pandya";
-*/
-  /* QHostAddress ownIPaddress;
-    foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
-        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost))
-            ownIPaddress = address;
-    }
+//  /*  Sample s;
+//    s.message = "Hello classes!";
+//    s.sender = "Vivek Pandya";
+//*/
+//  /* QHostAddress ownIPaddress;
+//    foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
+//        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost))
+//            ownIPaddress = address;
+//    }
 
-    Peer peer = Peer("Dipu Bhai",ownIPaddress);
-    Peer peer1 = Peer("LLVM_Ninja", ownIPaddress);
-
-
-Message message = Message(MessageType::tableDetails);
-message.insertDataString("Hello World");
-message.insertDataString("C++ is difficult , but when you are used to it every thing becomes easy.");
-message.insertPeerObj(peer);
-message.insertPeerObj(peer1);
-*/
-    while(server->hasPendingConnections()){
-
-        QTcpSocket *socket = server->nextPendingConnection();
-        connect(socket, SIGNAL(readyRead()),this, SLOT(readyRead()));
-        connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-       /* QByteArray block;
-        QDataStream out(&block, QIODevice::ReadWrite);
-        out.setVersion(QDataStream::Qt_5_5);
-    //! [4] //! [6]
-        out << (quint16)0;
-        //out << s;
-        //out << peer;
-        out << message;
-        out.device()->seek(0);
-
-        out << (quint16)(block.size() - sizeof(quint16));
-    //! [6] //! [7]
-       qDebug()<<QString(block);
-       socket->write(block);
-       socket->flush();
-
-       socket->waitForBytesWritten(3000);
-       qDebug()<<"Here!";
-*/
-    }
+//    Peer peer = Peer("Dipu Bhai",ownIPaddress);
+//    Peer peer1 = Peer("LLVM_Ninja", ownIPaddress);
 
 
-/*
-    QTcpSocket *socket = server->nextPendingConnection();
-    QString responseString;
-    QHash<QString, table>::iterator i;
-    for (i = MainWindow::tables.begin(); i != MainWindow::tables.end(); ++i){
-       table table = i.value();
-    responseString.append(table.gettableName()+":"+QString::number(table.getPort())+":");
-    }
-    //To convert QString object to Character Pointer for Write Function of Socket.
-    QByteArray tempByteArray = responseString.toUtf8();
-    const char *tempChar = tempByteArray.data();
-    socket->write(tempChar);
+//Message message = Message(MessageType::tableDetails);
+//message.insertDataString("Hello World");
+//message.insertDataString("C++ is difficult , but when you are used to it every thing becomes easy.");
+//message.insertPeerObj(peer);
+//message.insertPeerObj(peer1);
+//*/
+//    while(server->hasPendingConnections()){
 
-    socket->flush();
+//        QTcpSocket *socket = ->nextPendingConnection();
+//        connect(socket, SIGNAL(readyRead()),this, SLOT(readyRead()));
+//        connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+//       /* QByteArray block;
+//        QDataStream out(&block, QIODevice::ReadWrite);
+//        out.setVersion(QDataStream::Qt_5_5);
+//    //! [4] //! [6]
+//        out << (quint16)0;
+//        //out << s;
+//        //out << peer;
+//        out << message;
+//        out.device()->seek(0);
 
-    socket->waitForBytesWritten(3000);
-    */
-    //socket->close();
+//        out << (quint16)(block.size() - sizeof(quint16));
+//    //! [6] //! [7]
+//       qDebug()<<QString(block);
+//       socket->write(block);
+//       socket->flush();
 
-    //Note: The returned QTcpSocket object cannot be used from another thread.
-    //If you want to use an incoming connection from another thread,
-    //you need to override incomingConnection().
-}
+//       socket->waitForBytesWritten(3000);
+//       qDebug()<<"Here!";
+//*/
+//    }
+
+
+///*
+//    QTcpSocket *socket = server->nextPendingConnection();
+//    QString responseString;
+//    QHash<QString, table>::iterator i;
+//    for (i = MainWindow::tables.begin(); i != MainWindow::tables.end(); ++i){
+//       table table = i.value();
+//    responseString.append(table.gettableName()+":"+QString::number(table.getPort())+":");
+//    }
+//    //To convert QString object to Character Pointer for Write Function of Socket.
+//    QByteArray tempByteArray = responseString.toUtf8();
+//    const char *tempChar = tempByteArray.data();
+//    socket->write(tempChar);
+
+//    socket->flush();
+
+//    socket->waitForBytesWritten(3000);
+//    */
+//    //socket->close();
+
+//    //Note: The returned QTcpSocket object cannot be used from another thread.
+//    //If you want to use an incoming connection from another thread,
+//    //you need to override incomingConnection().
+//}
 
 /*This slot will be triggered when any connected socket receives any data.
  *  It will modify the server data structures according to message type received.
  * */
-void MainWindow::readyRead(){
-    qDebug()<<"Ok";
-    QTcpSocket *socket = static_cast<QTcpSocket *>(sender());
+//void MainWindow::readyRead(){
+//    qDebug()<<"Ok";
+//    QTcpSocket *socket = static_cast<QTcpSocket *>(sender());
 
-    quint16 blockSize=0;
-    QDataStream in(socket);
-    in.setVersion(QDataStream::Qt_5_5);
+//    quint16 blockSize=0;
+//    QDataStream in(socket);
+//    in.setVersion(QDataStream::Qt_5_5);
 
-    if (blockSize == 0) {
-        if (socket->bytesAvailable() < (int)sizeof(quint16))
-            return;
-//! [8]
+//    if (blockSize == 0) {
+//        if (socket->bytesAvailable() < (int)sizeof(quint16))
+//            return;
+////! [8]
 
-//! [10]
-        in >> blockSize;
-    }
+////! [10]
+//        in >> blockSize;
+//    }
 
-    if (socket->bytesAvailable() < blockSize)
-        return;
-//! [10] //! [11]
+//    if (socket->bytesAvailable() < blockSize)
+//        return;
+////! [10] //! [11]
 
-   // Sample sample;
-   // in >> sample;
-   // qDebug() << sample.message+"Message Recieved";
-   // qDebug()<<sample.sender+"From Sender ";
-   // Peer peer;
-    //in >> peer;
+//   // Sample sample;
+//   // in >> sample;
+//   // qDebug() << sample.message+"Message Recieved";
+//   // qDebug()<<sample.sender+"From Sender ";
+//   // Peer peer;
+//    //in >> peer;
 
-    //qDebug() << peer.getNickName();
-    //qDebug() << peer.getpeerAddress();
-    Message message ;
-    in >> message;
-    MessageType mtype = message.getMessageType();
-    QByteArray block;
-    QDataStream out(&block, QIODevice::ReadWrite);
-    out.setVersion(QDataStream::Qt_5_5);
-           out << (quint16)0;
-           //out << s;
-           //out << peer;
+//    //qDebug() << peer.getNickName();
+//    //qDebug() << peer.getpeerAddress();
+//    Message message ;
+//    in >> message;
+//    MessageType mtype = message.getMessageType();
+//    QByteArray block;
+//    QDataStream out(&block, QIODevice::ReadWrite);
+//    out.setVersion(QDataStream::Qt_5_5);
+//           out << (quint16)0;
+//           //out << s;
+//           //out << peer;
 
 
 
-    if (mtype == MessageType::GetTableDetails){
-        Message response = Message(MessageType::TableDetails);
-        qDebug() <<"GetTableDetails";
-        // Give all available tables in reply
-        QHash<QString, Table>::iterator i;
-        for (i = MainWindow::tables.begin(); i != MainWindow::tables.end(); ++i){
-           Table table = i.value();
-           response.insertTableObj(table);
+//    if (mtype == MessageType::GetTableDetails){
+//        Message response = Message(MessageType::TableDetails);
+//        qDebug() <<"GetTableDetails";
+//        // Give all available tables in reply
+//        QHash<QString, Table>::iterator i;
+//        for (i = MainWindow::tables.begin(); i != MainWindow::tables.end(); ++i){
+//           Table table = i.value();
+//           response.insertTableObj(table);
 
-        }
-        out << response;
-        out.device()->seek(0);
+//        }
+//        out << response;
+//        out.device()->seek(0);
 
-        out << (quint16)(block.size() - sizeof(quint16));
-    //! [6] //! [7]
-       qDebug()<<QString(block);
-       socket->write(block);
-       socket->flush();
+//        out << (quint16)(block.size() - sizeof(quint16));
+//    //! [6] //! [7]
+//       qDebug()<<QString(block);
+//       socket->write(block);
+//       socket->flush();
 
-       socket->waitForBytesWritten(3000);
+//       socket->waitForBytesWritten(3000);
 
-    }
-    else if(mtype == MessageType::JoinTable){
-         qDebug() <<"JoinTable";
-         for(QString tableName: message.getDataStrings()){
-             qDebug() << tableName +"table name received";
-             Table table = MainWindow::tables[tableName];
-            for(Peer peer: message.getPeerVector()){
-             table.addNickName(peer);
-            }
+//    }
+//    else if(mtype == MessageType::JoinTable){
+//         qDebug() <<"JoinTable";
+//         for(QString tableName: message.getDataStrings()){
+//             qDebug() << tableName +"table name received";
+//             Table table = MainWindow::tables[tableName];
+//            for(Peer peer: message.getPeerVector()){
+//             table.addNickName(peer);
+//            }
 
-             tables[tableName] = table;
-         }
+//             tables[tableName] = table;
+//         }
 
-    }
-    else if(mtype == MessageType::LeaveTable){
-         qDebug() <<"LeaveTable";
-         for(QString tableName: message.getDataStrings()){
-             Table table = MainWindow::tables[tableName];
-            for(Peer peer: message.getPeerVector()){
-             table.removeNickName(peer);
-            }
+//    }
+//    else if(mtype == MessageType::LeaveTable){
+//         qDebug() <<"LeaveTable";
+//         for(QString tableName: message.getDataStrings()){
+//             Table table = MainWindow::tables[tableName];
+//            for(Peer peer: message.getPeerVector()){
+//             table.removeNickName(peer);
+//            }
 
-             tables[tableName] = table;
-         }
+//             tables[tableName] = table;
+//         }
 
-    }
+//    }
 
 
 
@@ -346,15 +321,24 @@ void MainWindow::readyRead(){
 
         }
     } */
-}
+//}
 
 /* This slot will be triggered in response to connected socket’s disconnect signal
  * and it will delete the closed socket.
  * */
-void MainWindow::disconnected(){
+//void MainWindow::disconnected(){
 
-    QTcpSocket *socket = static_cast<QTcpSocket*>(sender());
+//    QTcpSocket *socket = static_cast<QTcpSocket*>(sender());
 
-        socket->deleteLater();
+//        socket->deleteLater();
 
+//}
+
+void MainWindow::updateAvalibaleTableList(std::vector<Table> tables)
+{
+    ui->availableTablesListWidget->clear();
+    for(std::vector<Table>::iterator i = tables.begin(), e = tables.end(); i!=e ; i++ )
+    {
+        ui->availableTablesListWidget->addItem(i->getTableName());
+    }
 }

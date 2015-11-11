@@ -2,10 +2,13 @@
 #define NETWORKOPERATIONMANAGER_H
 #include <QUdpSocket>
 #include <QTcpSocket>
+#include <QTcpServer>
+#include "dealer.h"
 
 class Table;
-class NetworkOperationManager
+class NetworkOperationManager : public QObject
 {
+    Q_OBJECT
 public:
     NetworkOperationManager();
     qint64 multicastDatagram(const QByteArray &datagram, const QHostAddress &host, quint16 port);
@@ -15,15 +18,20 @@ public:
     void requestTableList(); // This is asynchronous network call. Networkmanager will emit a signal when data available
 signals:
     void tableDetailsAvailable(std::vector<Table> tableDetails);
+    void tableDetailsOnSocket(QTcpSocket *socket);
+
 
 private slots:
     void readyRead();
     void connected();
+    void newConnectionServer();
+    void disconnectedServerSocket();
+    void readyReadServerSocket();
 private:
-    QUdpSocket multicastSocket;
-    QTcpSocket connectionSocket;
-
-
+    QUdpSocket *multicastSocket;
+    QTcpSocket * connectionSocket;
+    QTcpServer *tcpServer;
+    Dealer * dealer;
 };
 
 #endif // NETWORKOPERATIONMANAGER_H

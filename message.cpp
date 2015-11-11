@@ -1,4 +1,7 @@
 #include "message.h"
+#include "table.h"
+#include "card.h"
+#include <QDebug>
 
 Message::Message()
 {
@@ -67,17 +70,17 @@ QDataStream & operator <<(QDataStream & stream, const Message &message){
     std::vector<Card> cards = message.getCards();
     int numberOfCards = cards.size();
     stream << numberOfCards;
-    for(std::vector<QString>::iterator i = dataStrings.begin(); i != dataStrings.end() ; i++)
+    for(QString str : dataStrings)
     {
-        stream << *i;
+        stream << str;
     }
-    for(std::vector<Table>::iterator i = tables.begin(); i != tables.end(); i++)
-    {
-        stream << *i;
+    for(Table table: tables)
+     {
+                  stream << table;
     }
-    for(std::vector<Card>::iterator i = cards.begin(); i != cards.end(); i++)
-    {
-        stream << *i;
+    for(Card card: cards)
+        {
+                  stream << card;
     }
     return stream;
 }
@@ -86,7 +89,7 @@ QDataStream &  operator >>(QDataStream & stream, Message &message){
     MessageType mtype;
     QString stringObj;
     Table tableObj;
-    Card cardObj;
+    Card cardObj = Card();
     int dataStringsSize;
     int numberOfTables;
     int numberOfCards;
@@ -102,7 +105,7 @@ QDataStream &  operator >>(QDataStream & stream, Message &message){
     }
     for(int i=0; i<numberOfTables; i++)
     {
-        staeam >> tableObj;
+        stream >> tableObj;
         message.insertTable(tableObj);
     }
     for(int i=0; i<numberOfCards; i++)

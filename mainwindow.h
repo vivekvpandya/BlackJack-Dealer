@@ -2,10 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "table.h"
 #include <QListWidgetItem>
-#include <QTcpSocket>
-#include <QTcpServer>
+#include "table.h"
+#include "dealer.h"
+#include "networkoperationmanager.h"
 
 namespace Ui {
 class MainWindow;
@@ -21,18 +21,16 @@ public:
 
 private slots:
     int on_createBtn_clicked();
-    void onAvailableTablesListItemClicked(QListWidgetItem *listItem);
-    void newConnection();
-    void disconnected();
-    void readyRead();
+   // void onAvailableTablesListItemClicked(QListWidgetItem *listItem);
+    void updateAvalibaleTableList(std::vector<Table> tables);
 
 
 
 private:
     Ui::MainWindow *ui;
-    int portNum = 10000;
-    QHash<QString, Table> tables;
-    QTcpServer *server;
+    Dealer *dealer;
+    NetworkOperationManager *networkOperationManager;
+
 
 };
 

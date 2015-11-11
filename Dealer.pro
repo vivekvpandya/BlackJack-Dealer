@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui network xml
-QMAKE_CXXFLAGS += -std=c++11
+
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     card.cpp \
     deck.cpp \
     networkoperationmanager.cpp \
-    player.cpp
+    player.cpp \
+    dealer.cpp
 
 HEADERS  += mainwindow.h \
     message.h \
@@ -28,6 +29,7 @@ HEADERS  += mainwindow.h \
     card.h \
     deck.h \
     networkoperationmanager.h \
-    player.h
+    player.h \
+    dealer.h
 
 FORMS    += mainwindow.ui

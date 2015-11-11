@@ -9,6 +9,8 @@ class Deck
 public:
     Deck();
     Card popRandomCard();
+    std::list<Card> * getCards() ;
+    void insertCardToDeck(Card card);
 
 
 private:
@@ -16,4 +18,6 @@ private:
 
 };
 
+QDataStream & operator <<( QDataStream & stream,  Deck &deck);
+QDataStream & operator >>(QDataStream & stream, Deck & deck);
 #endif // DECK_H
