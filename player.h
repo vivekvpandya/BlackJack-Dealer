@@ -14,7 +14,7 @@ public:
     void setFoldTrue();
     void setFold(bool fold_);
     bool isFold();
-    std::vector<Card> * getCardHand();
+    std::vector<Card>  getCardHand();
     QString getName() const;
     void setName(const QString name_);
 private:

@@ -6,6 +6,7 @@
 #include "table.h"
 #include "dealer.h"
 #include "networkoperationmanager.h"
+#include "tablecontroller.h"
 
 namespace Ui {
 class MainWindow;
@@ -24,16 +25,19 @@ private slots:
     void newConnection();
     void disconnected();
     void readyRead();
-   // void onAvailableTablesListItemClicked(QListWidgetItem *listItem);
+    void onAvailableTablesListItemClicked(QListWidgetItem *listItem);
     //void updateAvalibaleTableList(std::vector<Table> tables);
 
 
+
+    void on_availableTablesListWidget_doubleClicked(const QModelIndex &index);
 
 private:
     Ui::MainWindow *ui;
     int portNum = 10000;
     QHash<QString, Table> tables;
     QTcpServer *server;
+    QList<TableController *> tableControllers;
 
 
 };

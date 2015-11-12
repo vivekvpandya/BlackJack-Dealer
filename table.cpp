@@ -4,6 +4,10 @@
 #include <QDataStream>
 #include <list>
 #include <QDebug>
+#include "message.h"
+#include <QUdpSocket>
+#include <QObject>
+
 Table::Table()
 {
 
@@ -14,6 +18,8 @@ Table::Table(int capacity_, QString tableName_, qint64 portNo_)
     tableName = tableName_;
     portNo = portNo_;
     waitForPalyer = true;
+
+
 
 }
 
@@ -77,9 +83,9 @@ int Table::numberofConnectedPlayer() const
     return connectedPalyer.size();
 }
 
-std::list<Player> * Table::getPlayerList()
+std::list<Player>  Table::getPlayerList()
 {
-    return &connectedPalyer;
+    return connectedPalyer;
 }
 
 void Table::addCardtoPlayeratIndex(Card card, int index)
@@ -111,4 +117,19 @@ QDataStream & operator >>(QDataStream & stream, Table & table)
     table.setTableName(tableName);
     table.setWaitingForPlayer(isWaitingForPalyer);
     return stream;
+}
+
+
+
+bool Table::multicastGameInfo()
+{
+    if(numberofConnectedPlayer() == capacity)
+    {
+
+         return true;
+    }
+    else
+    {
+        return false;
+    }
 }

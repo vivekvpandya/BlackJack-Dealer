@@ -32,9 +32,9 @@ void Player::addCardToHand(Card card)
     hand.push_back(card);
 }
 
-std::vector<Card> * Player::getCardHand()
+std::vector<Card>  Player::getCardHand()
 {
-    return &hand;
+    return hand;
 }
 
 QString  Player::getName() const
@@ -62,11 +62,11 @@ QDataStream & operator <<( QDataStream & stream,  Player &player)
     stream << player.getUnique_num();
     stream << player.getName();
     stream << player.isFold();
-    std::vector<Card> * hand = player.getCardHand();
+    std::vector<Card>  hand = player.getCardHand();
     std::vector<Card>::iterator i,e;
-    i = hand->begin();
-    e = hand->end();
-    stream << (int)hand->size();
+    i = hand.begin();
+    e = hand.end();
+    stream << (int)hand.size();
     for(;i != e; i++)
     {
         stream << *i;

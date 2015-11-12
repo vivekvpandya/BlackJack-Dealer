@@ -7,6 +7,7 @@
 #include "message.h"
 #include "dealer.h"
 #include "table.h"
+#include "tablecontroller.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -65,7 +66,8 @@ int MainWindow::on_createBtn_clicked()
         else{
         Table table = Table(tableCap,tableName,portNum);
         tables.insert(tableName,table);
-         ui->availableTablesListWidget->addItem(table.getTableName());
+        ui->availableTablesListWidget->addItem(table.getTableName());
+
         }
 
 
@@ -78,27 +80,27 @@ return 0;
 /* This is a slot responsible to handle click signal sent by availabletablesListWidget from ui.
  * It will print the information for the selected table from the tables collection.
  * */
-//void MainWindow::onAvailableTablesListItemClicked(QListWidgetItem *listItem){
+void MainWindow::onAvailableTablesListItemClicked(QListWidgetItem *listItem){
 
-//    ui->infoPanelTextBox->clear();
-//    Table table = MainWindow::tables.value(listItem->text());
-//    QString tableName = "Table name: "+table.getTableName()+"\n";
-//    QString tablePort = "Listening port: "+QString::number(table.getPort())+"\n";
-//    QString tableCap = "Table Capacity: "+table.getTableCap()+"\n";
-//   // qDebug() << tableName;
-//    QString tableConnectedNicks = "Connected Nicks: \n";
+    ui->infoPanelTextBox->clear();
+    Table table = MainWindow::tables.value(listItem->text());
+    QString tableName = "Table name: "+table.getTableName()+"\n";
+    QString tablePort = "Listening port: "+QString::number(table.getPortNo())+"\n";
+    QString tableCap = "Table Capacity: "+QString::number(table.getCapacity())+"\n";
+    qDebug() << tableName << "yeay";
+    QString tableConnectedNicks = "Connected Nicks: \n";
 
-//    for (Peer peer: table.getJoinedNickNames()) {
-//       tableConnectedNicks.append(peer.getNickName()+"\n");
-//    }
+    for (Player player : table.getPlayerList()) {
+       tableConnectedNicks.append(player.getName()+"\n");
+    }
 
-//    ui->infoPanelTextBox->insertPlainText(tableName+"\n");
-//    ui->infoPanelTextBox->insertPlainText(tablePort+"\n");
-//    ui->infoPanelTextBox->insertPlainText(tableCap+"\n");
-//    ui->infoPanelTextBox->insertPlainText(tableConnectedNicks+"\n");
+    ui->infoPanelTextBox->insertPlainText(tableName+"\n");
+    ui->infoPanelTextBox->insertPlainText(tablePort+"\n");
+    ui->infoPanelTextBox->insertPlainText(tableCap+"\n");
+    ui->infoPanelTextBox->insertPlainText(tableConnectedNicks+"\n");
 
 
-//}
+}
 
 //Function to handle clients connecting to sockets and to send them list of available tables
 /* This is a slot responsible to handle newConnection signal sent by QTcpServer reference.
@@ -265,8 +267,46 @@ void MainWindow::readyRead(){
     }
     else if(mtype == MessageType::JoinTable){
          qDebug() <<"JoinTable";
+         std::vector<QString> cmd = message.getDataStrings();
+         Player player = Player(cmd[0],false);
+         Table table = tables[cmd[1]];
+         QByteArray block;
+         Message response;
+         QDataStream out(&block, QIODevice::ReadWrite);
+         out.setVersion(QDataStream::Qt_5_5);
+                out << (quint16)0;
+         if(table.getCapacity() != table.numberofConnectedPlayer())
+         {
+         table.addPlayerToTable(player);
+         tables[cmd[1]] = table;
+         if(table.multicastGameInfo())
+         {   qDebug() << "Only one time intialization for a table";
+             TableController *controller = new TableController(table);
+             tableControllers.push_back(controller);
+             TableController *ctr = tableControllers.at(0);
+             // Adding 2 random Initial cards
+             ctr->addInitialCards();
+             ctr->addInitialCards();
+            // ctr->sendPlayerDetails();
 
+         }
+         response = Message(MessageType::AddedToTable);
+         response.insertDataString(table.getTableName());
+         }
+         else{
+          response = Message(MessageType::TableOverFolw);
+          response.insertDataString(table.getTableName());
+         }
+         out << response;
+         out.device()->seek(0);
 
+         out << (quint16)(block.size() - sizeof(quint16));
+     //! [6] //! [7]
+        qDebug()<< (quint16)(block.size() - sizeof(quint16));
+        socket->write(block);
+        socket->flush();
+
+        socket->waitForBytesWritten(4000);
     }
     else if(mtype == MessageType::LeaveTable){
          qDebug() <<"LeaveTable";
@@ -295,3 +335,23 @@ void MainWindow::disconnected(){
 //        ui->availableTablesListWidget->addItem(i->getTableName());
 //    }
 //}
+
+void MainWindow::on_availableTablesListWidget_doubleClicked(const QModelIndex &index)
+{
+    ui->infoPanelTextBox->clear();
+    Table table = MainWindow::tables.value(ui->availableTablesListWidget->currentItem()->text());
+    QString tableName = "Table name: "+table.getTableName()+"\n";
+    QString tablePort = "Listening port: "+QString::number(table.getPortNo())+"\n";
+    QString tableCap = "Table Capacity: "+QString::number(table.getCapacity())+"\n";
+    qDebug() << tableName << "yeay";
+    QString tableConnectedNicks = "Connected Nicks: \n";
+
+    for (Player player : table.getPlayerList()) {
+       tableConnectedNicks.append(player.getName()+"\n");
+    }
+
+    ui->infoPanelTextBox->insertPlainText(tableName+"\n");
+    ui->infoPanelTextBox->insertPlainText(tablePort+"\n");
+    ui->infoPanelTextBox->insertPlainText(tableCap+"\n");
+    ui->infoPanelTextBox->insertPlainText(tableConnectedNicks+"\n");
+}
