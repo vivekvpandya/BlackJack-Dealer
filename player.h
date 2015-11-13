@@ -10,7 +10,7 @@ public:
     Player(QString nick,bool isFold = false);
     void setUnique_num(int num);
     int getUnique_num();
-    void addCardToHand(Card card);
+    int addCardToHand(Card card);
     void setFoldTrue();
     void setFold(bool fold_);
     bool isFold();

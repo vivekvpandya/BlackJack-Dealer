@@ -235,7 +235,7 @@ void MainWindow::readyRead(){
 //        response.insertDataString("Vivek");
 //        response.insertDataString("Dipu");
 
-                QHash<QString, Table>::iterator i;
+        QHash<QString, Table>::iterator i;
         for (i = MainWindow::tables.begin(); i != MainWindow::tables.end(); ++i){
            Table table = i.value();
            qDebug() << table.getCapacity();
@@ -278,18 +278,13 @@ void MainWindow::readyRead(){
          if(table.getCapacity() != table.numberofConnectedPlayer())
          {
          table.addPlayerToTable(player);
-         tables[cmd[1]] = table;
-         if(table.multicastGameInfo())
-         {   qDebug() << "Only one time intialization for a table";
-             TableController *controller = new TableController(table);
-             tableControllers.push_back(controller);
-             TableController *ctr = tableControllers.at(0);
-             // Adding 2 random Initial cards
-             ctr->addInitialCards();
-             ctr->addInitialCards();
-            // ctr->sendPlayerDetails();
-
+         if(table.getCapacity() == table.numberofConnectedPlayer())
+         {
+               qDebug() << "Only one time intialization for a table";
+                 TableController *controller = new TableController(table);
+                 tableControllers.push_back(controller);
          }
+         tables[cmd[1]] = table;
          response = Message(MessageType::AddedToTable);
          response.insertDataString(table.getTableName());
          }

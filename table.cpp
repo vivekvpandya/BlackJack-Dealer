@@ -88,11 +88,11 @@ std::list<Player>  Table::getPlayerList()
     return connectedPalyer;
 }
 
-void Table::addCardtoPlayeratIndex(Card card, int index)
-{
+int Table::addCardtoPlayeratIndex(Card card, int index)
+{   qDebug() << "Add Card to player";
     std::list<Player >::iterator playerIt = connectedPalyer.begin();
     std::advance(playerIt, index);
-    (*playerIt).addCardToHand(card);
+    return  playerIt->addCardToHand(card); // need to manipulate on the pointer it seld
 }
 
 QDataStream & operator <<( QDataStream & stream, Table &table)
@@ -131,5 +131,32 @@ bool Table::multicastGameInfo()
     else
     {
         return false;
+    }
+}
+
+int Table::addCardtoPlayerWithName(Card card, QString name)
+{   int returnVal = 0;
+   std::list<Player>::iterator i,e;
+   i = connectedPalyer.begin();
+   e = connectedPalyer.end();
+
+    for(; i != e ; i++)
+    {
+
+        if (name.compare(i->getName()) == 0 ){
+          returnVal = i->addCardToHand(card);
+        }
+    }
+    return returnVal;
+}
+
+void Table::foldPlayerWithName(QString name)
+{
+    for(Player player : connectedPalyer)
+    {
+        if(name.compare(player.getName()) == 0)
+        {
+            player.setFoldTrue();
+        }
     }
 }

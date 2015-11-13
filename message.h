@@ -18,7 +18,10 @@ enum class MessageType{
     NickAvailable,
     AddedToTable,
     TableOverFolw,
-    NickRegistered
+    NickRegistered,
+    Hit,
+    Fold,
+    Card
 };
 
 QDataStream & operator <<( QDataStream & stream, const MessageType &type);
