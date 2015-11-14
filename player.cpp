@@ -111,10 +111,19 @@ QDataStream & operator >>(QDataStream & stream, Player & player){
     int handSize;
     stream >> handSize;
     Card card;
+    if(fold == true)
+    {
+        player.setFold(false);
+    }
     for(int i =0 ; i < handSize ; i++)
     {
      stream >> card;
+
      player.addCardToHand(card);
+    }
+    if(fold == true)
+    {
+        player.setFold(true);
     }
     return stream;
 }

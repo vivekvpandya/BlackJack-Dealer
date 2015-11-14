@@ -4,6 +4,7 @@
 #include "deck.h"
 #include "player.h"
 #include "card.h"
+#include <QNetworkInterface>
 
 TableController::TableController(QObject *parent) : QObject(parent)
 {
@@ -18,20 +19,28 @@ TableController::TableController(Table tablePtr, QObject *parent) : QObject(pare
     udpSocket->bind(QHostAddress::AnyIPv4,table.getPortNo(), QUdpSocket::ShareAddress);
     udpSocket->joinMulticastGroup(groupAddress);
     connect(udpSocket,SIGNAL(readyRead()),this,SLOT(processPendingDatagrams()));
+    udpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption,QVariant(1));
     qDebug() << "Table controller is created";
     qDebug() << table.getPortNo() ;
     decider = new Decider();
 }
 
 void TableController::processPendingDatagrams()
-{
+{   QList<QHostAddress>local_addresses = QNetworkInterface::allAddresses();
     bool isGameOver = false;
     while (udpSocket->hasPendingDatagrams()) {
+        QHostAddress  senderAddress;
+        quint16 senderPort;
+       qDebug() << udpSocket->peerAddress();
          Message message;
         QByteArray datagram;
         datagram.resize(udpSocket->pendingDatagramSize());
-        udpSocket->readDatagram(datagram.data(), datagram.size());
+        udpSocket->readDatagram(datagram.data(), datagram.size(),&senderAddress,&senderPort);
         //statusLabel->setText(tr("Received datagram: \"%1\"").arg(datagram.data()));
+        //if((local_addresses.contains(senderAddress)) && (senderPort == udpSocket->localPort()) ){
+          //  qDebug() << "Dropping the self message";
+       // }
+      //  else{
         qDebug()<<"pending datagram dealer \n";
 
         QDataStream in(&datagram, QIODevice::ReadOnly);
@@ -81,8 +90,10 @@ void TableController::processPendingDatagrams()
                out << messageNew;
                udpSocket->writeDatagram(datagram, groupAddress, table.getPortNo());
                udpSocket->flush();
+               udpSocket->waitForBytesWritten();
                qDebug() << "sending player details";
                messageNew.printEmAll();
+               //messageNew.clearContainers();
                qDebug() << isGameOver;
                if(isGameOver == true)
                {
@@ -101,9 +112,8 @@ void TableController::processPendingDatagrams()
                }
            }
 
-
-
-    }
+       // }
+}
 }
 
 void TableController::sendPlayerDetails()
@@ -124,6 +134,7 @@ void TableController::sendPlayerDetails()
     udpSocket->flush();
     qDebug() << "sending player details \n";
     message.printEmAll();
+    //message.clearContainers();
 }
 
 void TableController::addInitialCards()
@@ -174,5 +185,6 @@ void TableController::sendWinners()
     udpSocket->flush();
     qDebug() << "winner Details send";
     gameOverMsg.printEmAll();
+   // gameOverMsg.clearContainers();
 
 }
