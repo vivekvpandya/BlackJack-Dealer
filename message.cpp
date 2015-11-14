@@ -169,3 +169,27 @@ void Message::clearContainers()
     cards.clear();
     players.clear();
 }
+
+
+void Message::printEmAll()
+{
+    qDebug() << "MessageType : " <<(int)m_type;
+    for(QString dataString: dataStrings)
+    {
+        qDebug() << "DataString : "<<dataString;
+    }
+    for(Card card : cards)
+    {
+        qDebug() << "Card : " <<card.getValue() << " " << card.getSuit();
+    }
+    for(Player player : players)
+    {
+        qDebug() << "Player : "<<player.getName();
+        qDebug() << "Player isFold : "<<player.isFold();
+        qDebug() << "Player cards : ";
+        for(Card card : player.getCardHand())
+        {
+            qDebug() << " \t Card : "<<card.getRank() << " " << card.getSuit();
+        }
+    }
+}

@@ -89,7 +89,7 @@ std::list<Player>  Table::getPlayerList()
 }
 
 int Table::addCardtoPlayeratIndex(Card card, int index)
-{   qDebug() << "Add Card to player";
+{
     std::list<Player >::iterator playerIt = connectedPalyer.begin();
     std::advance(playerIt, index);
     return  playerIt->addCardToHand(card); // need to manipulate on the pointer it seld

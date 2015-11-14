@@ -32,11 +32,12 @@ void TableController::processPendingDatagrams()
         datagram.resize(udpSocket->pendingDatagramSize());
         udpSocket->readDatagram(datagram.data(), datagram.size());
         //statusLabel->setText(tr("Received datagram: \"%1\"").arg(datagram.data()));
-        qDebug()<<"got here in pending datagram";
+        qDebug()<<"pending datagram dealer \n";
 
         QDataStream in(&datagram, QIODevice::ReadOnly);
            in.setVersion(QDataStream::Qt_5_5);
            in >> message;
+           message.printEmAll();
            MessageType mtype = message.getMessageType();
            if(mtype == MessageType::Message){
                 std::vector<QString> cmd = message.getDataStrings();
@@ -70,6 +71,7 @@ void TableController::processPendingDatagrams()
                    messageNew.insertDataString("1");
                    messageNew.insertCard(card);
                    isGameOver = checkIsGameOver();
+
                }
                else if (foldStatus == 0)
                {
@@ -78,8 +80,10 @@ void TableController::processPendingDatagrams()
                }
                out << messageNew;
                udpSocket->writeDatagram(datagram, groupAddress, table.getPortNo());
-               udpSocket->waitForBytesWritten(30000);
+               udpSocket->flush();
                qDebug() << "sending player details";
+               messageNew.printEmAll();
+               qDebug() << isGameOver;
                if(isGameOver == true)
                {
                     sendWinners();
@@ -90,6 +94,7 @@ void TableController::processPendingDatagrams()
                std::vector<QString> cmd = message.getDataStrings();
                table.foldPlayerWithName(cmd[0]);
                isGameOver = checkIsGameOver();
+               qDebug() << isGameOver;
                if(isGameOver == true)
                {
                     sendWinners();
@@ -116,7 +121,9 @@ void TableController::sendPlayerDetails()
     out.setVersion(QDataStream::Qt_5_5);
     out << message;
     udpSocket->writeDatagram(datagram, groupAddress, table.getPortNo());
-    qDebug() << "sending player details";
+    udpSocket->flush();
+    qDebug() << "sending player details \n";
+    message.printEmAll();
 }
 
 void TableController::addInitialCards()
@@ -164,7 +171,8 @@ void TableController::sendWinners()
     goout.setVersion(QDataStream::Qt_5_5);
     goout << gameOverMsg;
     udpSocket->writeDatagram(gameOverDataGram, groupAddress, table.getPortNo());
-    udpSocket->waitForBytesWritten(30000);
+    udpSocket->flush();
     qDebug() << "winner Details send";
+    gameOverMsg.printEmAll();
 
 }
