@@ -5,6 +5,7 @@
 #include "table.h"
 #include <QUdpSocket>
 #include "deck.h"
+#include "decider.h"
 
 class TableController : public QObject
 {
@@ -15,6 +16,8 @@ private:
     Deck deck;
     QUdpSocket *udpSocket;
     QHostAddress groupAddress;
+    Decider *decider;
+
 
 
 public:
@@ -22,6 +25,9 @@ public:
     TableController(Table tablePrt,QObject *parent = 0);
     void sendPlayerDetails();
     void addInitialCards();
+    bool checkIsGameOver();
+    void decideWinner();
+    void sendWinners();
 
 signals:
 

@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     networkoperationmanager.cpp \
     player.cpp \
     dealer.cpp \
-    tablecontroller.cpp
+    tablecontroller.cpp \
+    decider.cpp
 
 HEADERS  += mainwindow.h \
     message.h \
@@ -32,6 +33,7 @@ HEADERS  += mainwindow.h \
     networkoperationmanager.h \
     player.h \
     dealer.h \
-    tablecontroller.h
+    tablecontroller.h \
+    decider.h
 
 FORMS    += mainwindow.ui

@@ -21,7 +21,8 @@ enum class MessageType{
     NickRegistered,
     Hit,
     Fold,
-    Card
+    Card,
+    GameOver
 };
 
 QDataStream & operator <<( QDataStream & stream, const MessageType &type);
@@ -45,7 +46,7 @@ public:
     void insertCard(Card card);
     void insertPlayer(Player player);
     std::vector<Player> getPlayers() const;
-
+    void clearContainers();
 
 private:
     MessageType m_type;

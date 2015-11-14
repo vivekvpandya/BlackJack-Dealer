@@ -20,11 +20,14 @@ TableController::TableController(Table tablePtr, QObject *parent) : QObject(pare
     connect(udpSocket,SIGNAL(readyRead()),this,SLOT(processPendingDatagrams()));
     qDebug() << "Table controller is created";
     qDebug() << table.getPortNo() ;
+    decider = new Decider();
 }
 
 void TableController::processPendingDatagrams()
-{   Message message;
+{
+    bool isGameOver = false;
     while (udpSocket->hasPendingDatagrams()) {
+         Message message;
         QByteArray datagram;
         datagram.resize(udpSocket->pendingDatagramSize());
         udpSocket->readDatagram(datagram.data(), datagram.size());
@@ -53,16 +56,20 @@ void TableController::processPendingDatagrams()
                // foldStatus = 2 => already fold card is wasted! Card can be added back to deck
                qDebug() << foldStatus << "foldStatus";
                Message messageNew = Message(MessageType::Card);
+               messageNew.clearContainers();
                QByteArray datagram;
                QDataStream out(&datagram, QIODevice::WriteOnly);
                out.setVersion(QDataStream::Qt_5_5);
-              // messageNew.insertDataString(cmd[0]);  // Needs to be check
+               messageNew.insertDataString(cmd[0]);  // Needs to be check
                if(foldStatus == 2){
                    messageNew.insertDataString("2");
+                   isGameOver = checkIsGameOver();
+
                }
                else if(foldStatus == 1){
                    messageNew.insertDataString("1");
                    messageNew.insertCard(card);
+                   isGameOver = checkIsGameOver();
                }
                else if (foldStatus == 0)
                {
@@ -73,13 +80,23 @@ void TableController::processPendingDatagrams()
                udpSocket->writeDatagram(datagram, groupAddress, table.getPortNo());
                udpSocket->waitForBytesWritten(30000);
                qDebug() << "sending player details";
-
+               if(isGameOver == true)
+               {
+                    sendWinners();
+               }
            }
            else if(mtype == MessageType::Fold)
            {
                std::vector<QString> cmd = message.getDataStrings();
                table.foldPlayerWithName(cmd[0]);
+               isGameOver = checkIsGameOver();
+               if(isGameOver == true)
+               {
+                    sendWinners();
+               }
            }
+
+
 
     }
 }
@@ -89,6 +106,7 @@ void TableController::sendPlayerDetails()
     addInitialCards();
     std::list<Player> players = table.getPlayerList();
     Message message = Message(MessageType::GameDetails); // A GameDetials Message
+    message.clearContainers();
     for(Player player : players)
     {
       message.insertPlayer(player);
@@ -112,4 +130,41 @@ void TableController::addInitialCards()
         table.addCardtoPlayeratIndex(card, i);
         table.addCardtoPlayeratIndex(card1,i);
     }
+}
+
+bool TableController::checkIsGameOver()
+{
+    bool returnVal = true;
+    for(Player player : table.getPlayerList())
+    {
+        if(player.isFold() == false){
+            returnVal = false;
+            break;
+        }
+    }
+    return returnVal;
+}
+
+void TableController::sendWinners()
+{
+    std::vector<QString> winners = decider->gameDecider(&table);
+    Message gameOverMsg = Message(MessageType::GameOver);
+    gameOverMsg.clearContainers();
+    for(QString winner : winners)
+    {
+        gameOverMsg.insertDataString(winner);
+    }
+    for(QString str : gameOverMsg.getDataStrings())
+    {
+        qDebug() << str << "_______###_______";
+    }
+
+    QByteArray gameOverDataGram;
+    QDataStream goout(&gameOverDataGram, QIODevice::WriteOnly);
+    goout.setVersion(QDataStream::Qt_5_5);
+    goout << gameOverMsg;
+    udpSocket->writeDatagram(gameOverDataGram, groupAddress, table.getPortNo());
+    udpSocket->waitForBytesWritten(30000);
+    qDebug() << "winner Details send";
+
 }
