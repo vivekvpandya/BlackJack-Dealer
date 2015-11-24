@@ -55,6 +55,11 @@ void TableController::processPendingDatagrams()
            else if(mtype == MessageType::GetTableDetails)
            {
                 sendPlayerDetails();
+                isGameOver = checkIsGameOver();
+                if(isGameOver == true)
+                {
+                     sendWinners();
+                }
            }
            else if(mtype == MessageType::Hit)
            {
@@ -183,8 +188,12 @@ void TableController::sendWinners()
     goout << gameOverMsg;
     udpSocket->writeDatagram(gameOverDataGram, groupAddress, table.getPortNo());
     udpSocket->flush();
+    udpSocket->waitForBytesWritten();
     qDebug() << "winner Details send";
     gameOverMsg.printEmAll();
    // gameOverMsg.clearContainers();
+   emit resetTable(table.getTableName());
+
+
 
 }

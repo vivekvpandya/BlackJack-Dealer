@@ -30,6 +30,7 @@ public:
     bool multicastGameInfo();
     int addCardtoPlayerWithName(Card card, QString name );
     void foldPlayerWithName(QString name);
+    void resetTable();
 private slots:
 
 

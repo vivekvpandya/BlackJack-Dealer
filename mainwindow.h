@@ -27,6 +27,7 @@ private slots:
     void readyRead();
     void onAvailableTablesListItemClicked(QListWidgetItem *listItem);
     //void updateAvalibaleTableList(std::vector<Table> tables);
+    void resetTable(QString table);
 
 
 

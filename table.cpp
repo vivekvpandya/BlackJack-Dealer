@@ -135,7 +135,7 @@ bool Table::multicastGameInfo()
 }
 
 int Table::addCardtoPlayerWithName(Card card, QString name)
-{   int returnVal = 0;
+{  int returnVal = 0;
    std::list<Player>::iterator i,e;
    i = connectedPalyer.begin();
    e = connectedPalyer.end();
@@ -152,11 +152,21 @@ int Table::addCardtoPlayerWithName(Card card, QString name)
 
 void Table::foldPlayerWithName(QString name)
 {
-    for(Player player : connectedPalyer)
-    {
-        if(name.compare(player.getName()) == 0)
-        {
-            player.setFoldTrue();
-        }
-    }
+    std::list<Player>::iterator i,e;
+    i = connectedPalyer.begin();
+    e = connectedPalyer.end();
+
+     for(; i != e ; i++)
+     {
+         if(name.compare(i->getName()) == 0)
+         {
+             i->setFoldTrue();
+         }
+     }
+}
+
+void Table::resetTable()
+{
+    waitForPalyer = true;
+    connectedPalyer.clear();
 }

@@ -283,6 +283,7 @@ void MainWindow::readyRead(){
                qDebug() << "Only one time intialization for a table";
                  TableController *controller = new TableController(table);
                  tableControllers.push_back(controller);
+                 connect(controller,SIGNAL(resetTable(QString)),this,SLOT(resetTable(QString)));
          }
          tables[cmd[1]] = table;
          response = Message(MessageType::AddedToTable);
@@ -349,4 +350,9 @@ void MainWindow::on_availableTablesListWidget_doubleClicked(const QModelIndex &i
     ui->infoPanelTextBox->insertPlainText(tablePort+"\n");
     ui->infoPanelTextBox->insertPlainText(tableCap+"\n");
     ui->infoPanelTextBox->insertPlainText(tableConnectedNicks+"\n");
+}
+
+void MainWindow::resetTable(QString table)
+{
+    tables[table].resetTable();
 }

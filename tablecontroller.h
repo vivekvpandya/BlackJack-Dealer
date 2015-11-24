@@ -30,6 +30,7 @@ public:
     void sendWinners();
 
 signals:
+    void resetTable(QString tableName);
 
 public slots:
     void processPendingDatagrams();
